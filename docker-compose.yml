@@ -1,0 +1,55 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    ports:
+      - "4201:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.angular
+    environment:
+      - NODE_ENV=development
+    command: npm start -- --host 0.0.0.0
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://respire:respire@db:5432/respire
+      - JWT_SECRET=dev-secret-change-in-prod-32chars!!
+      - JWT_REFRESH_SECRET=dev-refresh-secret-change-in-prod
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - NODE_ENV=development
+      - CORS_ORIGIN=http://localhost:4201
+    depends_on:
+      db:
+        condition: service_healthy
+    command: npm run dev
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=respire
+      - POSTGRES_PASSWORD=respire
+      - POSTGRES_DB=respire
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U respire"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
