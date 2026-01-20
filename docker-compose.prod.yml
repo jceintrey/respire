@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ${DOCKER_USERNAME}/respire-frontend:${VERSION:-latest}
+    image: ${DOCKER_USERNAME}/respire-frontend:latest
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ${DOCKER_USERNAME}/respire-backend:${VERSION:-latest}
+    image: ${DOCKER_USERNAME}/respire-backend:latest
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
