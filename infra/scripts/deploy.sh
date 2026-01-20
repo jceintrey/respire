@@ -54,6 +54,18 @@ ssh $VPS_HOST << EOF
     # Restart services
     docker compose -f docker-compose.prod.yml up -d
 
+    # Wait for database to be ready
+    echo "Waiting for database..."
+    sleep 10
+
+    # Run migrations
+    echo "Running migrations..."
+    docker compose -f docker-compose.prod.yml exec -T backend npm run migrate
+
+    # Seed data (only runs if tables are empty)
+    echo "Seeding data..."
+    docker compose -f docker-compose.prod.yml exec -T backend npm run seed || true
+
     # Clean up old images
     docker image prune -f
 
