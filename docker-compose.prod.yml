@@ -1,8 +1,8 @@
 services:
   frontend:
     image: ${DOCKER_USERNAME}/respire-frontend:latest
-    expose:
-      - "4201"
+    ports:
+      - "4201:80"
     restart: unless-stopped
 
   backend:

@@ -3,9 +3,9 @@ set -e
 
 # Configuration
 VERSION=${1:-$(date +%Y%m%d-%H%M%S)}
-DOCKER_USERNAME=${DOCKER_USERNAME:-"yourusername"}
-VPS_HOST=${VPS_HOST:-"user@your-vps.com"}
-DEPLOY_PATH=${DEPLOY_PATH:-"/opt/respire"}
+DOCKER_USERNAME=${DOCKER_USERNAME:-"ursaminor5"}
+VPS_HOST=${VPS_HOST:-"root@161.97.144.58"}
+DEPLOY_PATH=${DEPLOY_PATH:-"/root/respire"}
 
 echo "=========================================="
 echo "  Respire - Deployment Script"
