@@ -3,6 +3,8 @@ services:
     image: ${DOCKER_USERNAME}/respire-frontend:latest
     ports:
       - "4201:80"
+    networks:
+      - respire-network
     restart: unless-stopped
 
   backend:
@@ -17,6 +19,8 @@ services:
       CORS_ORIGIN: https://${DOMAIN}
     expose:
       - "3000"
+    networks:
+      - respire-network
     depends_on:
       - db
     restart: unless-stopped
@@ -29,7 +33,13 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - respire-network
     restart: unless-stopped
+
+networks:
+  respire-network:
+    driver: bridge
 
 volumes:
   pgdata:
