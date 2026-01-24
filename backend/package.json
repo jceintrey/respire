@@ -7,9 +7,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "migrate": "tsx src/db/migrate.ts",
-    "migrate:down": "tsx src/db/migrate.ts down",
-    "seed": "tsx src/db/seed.ts",
+    "migrate": "node dist/db/migrate.js",
+    "migrate:down": "node dist/db/migrate.js down",
+    "migrate:dev": "tsx src/db/migrate.ts",
+    "migrate:dev:down": "tsx src/db/migrate.ts down",
+    "seed": "node dist/db/seed.js",
+    "seed:dev": "tsx src/db/seed.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
