@@ -216,8 +216,8 @@ import type {
     }
 
     .bubble {
-      width: 180px;
-      height: 180px;
+      width: 140px;
+      height: 140px;
       border-radius: 50%;
       background: radial-gradient(
         circle at 30% 30%,
@@ -244,13 +244,14 @@ import type {
     }
 
     .phase-text {
-      margin-top: var(--space-xl);
+      margin-top: var(--space-2xl);
       font-size: 1.25rem;
       font-weight: 500;
       color: white;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       opacity: 0.9;
+      min-height: 2rem;
     }
 
     .timer {
