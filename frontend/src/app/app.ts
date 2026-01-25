@@ -18,7 +18,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       <main class="app-main">
         <router-outlet />
       </main>
-      @if (authService.isAuthenticated() && !isBreathingPage()) {
+      @if (authService.isAuthenticated() && !hideBottomNav()) {
         <app-bottom-nav />
       }
     }
@@ -42,10 +42,13 @@ export class App {
   protected authService = inject(AuthService);
   private router = inject(Router);
 
-  isBreathingPage = toSignal(
+  hideBottomNav = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map((event) => event.urlAfterRedirects.startsWith('/breathe'))
+      map((event) => {
+        const url = event.urlAfterRedirects;
+        return url.startsWith('/breathe') || url.startsWith('/patterns/');
+      })
     ),
     { initialValue: false }
   );
