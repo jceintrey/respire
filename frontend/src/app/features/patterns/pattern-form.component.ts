@@ -153,7 +153,7 @@ import type { BreathingPattern } from '../../core/models/pattern.model';
     .pattern-form-page {
       padding: var(--space-md);
       padding-top: calc(var(--safe-area-top) + var(--space-md));
-      padding-bottom: calc(var(--safe-area-bottom) + var(--space-xl));
+      padding-bottom: calc(var(--safe-area-bottom) + 120px);
       max-width: 480px;
       margin: 0 auto;
     }
