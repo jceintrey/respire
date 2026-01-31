@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { RecaptchaService } from '../../core/services/recaptcha.service';
 
 @Component({
   selector: 'app-login',
@@ -143,29 +144,43 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private recaptchaService = inject(RecaptchaService);
 
   email = '';
   password = '';
   loading = signal(false);
   error = signal('');
 
-  onSubmit(): void {
+  ngOnInit(): void {
+    this.recaptchaService.loadScript();
+  }
+
+  async onSubmit(): Promise<void> {
     if (!this.email || !this.password) return;
 
     this.loading.set(true);
     this.error.set('');
 
-    this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: () => {
-        this.router.navigate(['/']);
-      },
-      error: (err) => {
-        this.error.set(err.error?.error || 'Erreur de connexion');
-        this.loading.set(false);
-      },
-    });
+    try {
+      const recaptchaToken = await this.recaptchaService.execute('login');
+
+      this.authService
+        .login({ email: this.email, password: this.password, recaptchaToken })
+        .subscribe({
+          next: () => {
+            this.router.navigate(['/']);
+          },
+          error: (err) => {
+            this.error.set(err.error?.error || 'Erreur de connexion');
+            this.loading.set(false);
+          },
+        });
+    } catch {
+      this.error.set('Erreur de vérification reCAPTCHA');
+      this.loading.set(false);
+    }
   }
 }

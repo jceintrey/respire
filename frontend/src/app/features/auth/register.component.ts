@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { RecaptchaService } from '../../core/services/recaptcha.service';
 
 @Component({
   selector: 'app-register',
@@ -163,9 +164,10 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `,
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private recaptchaService = inject(RecaptchaService);
 
   name = '';
   email = '';
@@ -173,26 +175,38 @@ export class RegisterComponent {
   loading = signal(false);
   error = signal('');
 
-  onSubmit(): void {
+  ngOnInit(): void {
+    this.recaptchaService.loadScript();
+  }
+
+  async onSubmit(): Promise<void> {
     if (!this.email || !this.password) return;
 
     this.loading.set(true);
     this.error.set('');
 
-    this.authService
-      .register({
-        email: this.email,
-        password: this.password,
-        name: this.name || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.router.navigate(['/']);
-        },
-        error: (err) => {
-          this.error.set(err.error?.error || "Erreur lors de l'inscription");
-          this.loading.set(false);
-        },
-      });
+    try {
+      const recaptchaToken = await this.recaptchaService.execute('register');
+
+      this.authService
+        .register({
+          email: this.email,
+          password: this.password,
+          name: this.name || undefined,
+          recaptchaToken,
+        })
+        .subscribe({
+          next: () => {
+            this.router.navigate(['/']);
+          },
+          error: (err) => {
+            this.error.set(err.error?.error || "Erreur lors de l'inscription");
+            this.loading.set(false);
+          },
+        });
+    } catch {
+      this.error.set('Erreur de vérification reCAPTCHA');
+      this.loading.set(false);
+    }
   }
 }

@@ -6,6 +6,7 @@ import { jwtPlugin } from './plugins/jwt.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { patternsRoutes } from './modules/patterns/patterns.routes.js';
 import { sessionsRoutes } from './modules/sessions/sessions.routes.js';
+import { adminRoutes } from './modules/admin/admin.routes.js';
 
 const fastify = Fastify({
   logger: env.NODE_ENV === 'development'
@@ -35,6 +36,7 @@ async function start() {
   await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(patternsRoutes, { prefix: '/api/patterns' });
   await fastify.register(sessionsRoutes, { prefix: '/api/sessions' });
+  await fastify.register(adminRoutes, { prefix: '/api/admin' });
 
   // Start server
   try {

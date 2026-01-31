@@ -47,7 +47,7 @@ export class App {
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
       map((event) => {
         const url = event.urlAfterRedirects;
-        return url.startsWith('/breathe') || url.startsWith('/patterns/');
+        return url.startsWith('/breathe') || url.startsWith('/patterns/') || url.startsWith('/admin');
       })
     ),
     { initialValue: false }

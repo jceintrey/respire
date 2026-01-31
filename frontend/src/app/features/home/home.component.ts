@@ -90,6 +90,18 @@ import type { BreathingPattern } from '../../core/models/pattern.model';
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </a>
+
+        @if (isAdmin()) {
+          <a routerLink="/admin" class="action-link card action-link--admin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 4.354a4 4 0 1 1 0 5.292M15 21H3v-1a6 6 0 0 1 12 0v1zm0 0h6v-1a6 6 0 0 0-9-5.197M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+            </svg>
+            <span>Administration</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </a>
+        }
       </section>
     </div>
   `,
@@ -265,6 +277,14 @@ import type { BreathingPattern } from '../../core/models/pattern.model';
         height: 20px;
         color: var(--text-muted);
       }
+
+      &--admin {
+        border: 1px solid var(--primary);
+
+        svg:first-child {
+          color: var(--primary);
+        }
+      }
     }
   `,
 })
@@ -277,10 +297,12 @@ export class HomeComponent implements OnInit {
   userName = signal<string | null>(null);
   stats = signal<SessionStats | null>(null);
   presets = signal<BreathingPattern[]>([]);
+  isAdmin = signal(false);
 
   ngOnInit(): void {
     const user = this.authService.user();
     this.userName.set(user?.name || null);
+    this.isAdmin.set(user?.isAdmin || false);
 
     this.patternService.loadPatterns().subscribe({
       next: () => {

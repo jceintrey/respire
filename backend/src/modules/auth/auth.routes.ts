@@ -10,6 +10,7 @@ import {
   type GoogleAuthInput,
 } from './auth.schemas.js';
 import { env } from '../../config/env.js';
+import { verifyRecaptcha } from '../../utils/recaptcha.js';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -36,10 +37,20 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Verify reCAPTCHA
+      if (parsed.data.recaptchaToken) {
+        const recaptchaResult = await verifyRecaptcha(parsed.data.recaptchaToken, 'register');
+        if (!recaptchaResult.valid) {
+          return reply.status(400).send({ error: 'Vérification reCAPTCHA échouée' });
+        }
+      } else if (env.RECAPTCHA_SECRET_KEY) {
+        return reply.status(400).send({ error: 'Token reCAPTCHA requis' });
+      }
+
       try {
         const user = await authService.register(parsed.data);
         const accessToken = fastify.jwt.sign(authService.toUserPayload(user), {
-          expiresIn: '15m',
+          expiresIn: '7d',
         });
         const refreshToken = await authService.createRefreshToken(user.id);
 
@@ -66,10 +77,20 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
     }
 
+    // Verify reCAPTCHA
+    if (parsed.data.recaptchaToken) {
+      const recaptchaResult = await verifyRecaptcha(parsed.data.recaptchaToken, 'login');
+      if (!recaptchaResult.valid) {
+        return reply.status(400).send({ error: 'Vérification reCAPTCHA échouée' });
+      }
+    } else if (env.RECAPTCHA_SECRET_KEY) {
+      return reply.status(400).send({ error: 'Token reCAPTCHA requis' });
+    }
+
     try {
       const user = await authService.login(parsed.data);
       const accessToken = fastify.jwt.sign(authService.toUserPayload(user), {
-        expiresIn: '15m',
+        expiresIn: '7d',
       });
       const refreshToken = await authService.createRefreshToken(user.id);
 
@@ -114,7 +135,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       );
 
       const accessToken = fastify.jwt.sign(authService.toUserPayload(user), {
-        expiresIn: '15m',
+        expiresIn: '7d',
       });
       const refreshToken = await authService.createRefreshToken(user.id);
 
@@ -148,7 +169,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     await authService.revokeRefreshToken(refreshToken);
     const newRefreshToken = await authService.createRefreshToken(user.id);
     const accessToken = fastify.jwt.sign(authService.toUserPayload(user), {
-      expiresIn: '15m',
+      expiresIn: '7d',
     });
 
     reply.setCookie('refreshToken', newRefreshToken, COOKIE_OPTIONS);

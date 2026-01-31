@@ -13,6 +13,7 @@ export interface UsersTable {
   password_hash: string | null;
   google_id: string | null;
   name: string | null;
+  is_admin: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }

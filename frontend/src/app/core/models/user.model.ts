@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string | null;
+  isAdmin: boolean;
 }
 
 export interface AuthResponse {
@@ -13,9 +14,11 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name?: string;
+  recaptchaToken?: string | null;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+  recaptchaToken?: string | null;
 }

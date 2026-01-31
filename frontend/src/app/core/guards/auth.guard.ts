@@ -35,3 +35,21 @@ export const guestGuard: CanActivateFn = async () => {
   router.navigate(['/']);
   return false;
 };
+
+export const adminGuard: CanActivateFn = async () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  // Wait for auth check to complete
+  while (authService.isLoading()) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  const user = authService.user();
+  if (user?.isAdmin) {
+    return true;
+  }
+
+  router.navigate(['/']);
+  return false;
+};

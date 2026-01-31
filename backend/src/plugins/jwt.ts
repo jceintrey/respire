@@ -18,11 +18,13 @@ declare module '@fastify/jwt' {
       id: string;
       email: string;
       name: string | null;
+      isAdmin: boolean;
     };
     user: {
       id: string;
       email: string;
       name: string | null;
+      isAdmin: boolean;
     };
   }
 }
