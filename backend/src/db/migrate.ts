@@ -1,9 +1,11 @@
 import { Kysely, sql } from 'kysely';
 import { db } from './kysely.js';
 import * as migration001 from './migrations/001_initial.js';
+import * as migration002 from './migrations/002_add_is_admin.js';
 
 const migrations = [
   { name: '001_initial', ...migration001 },
+  { name: '002_add_is_admin', ...migration002 },
 ];
 
 async function migrate() {
