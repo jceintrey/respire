@@ -85,6 +85,14 @@ import { AuthService } from '../../core/services/auth.service';
                   >
                     Modifier
                   </button>
+                  @if (!user.googleId) {
+                    <button
+                      class="btn btn--sm btn--ghost"
+                      (click)="confirmResetPassword(user)"
+                    >
+                      Reset MDP
+                    </button>
+                  }
                   <button
                     class="btn btn--sm btn--ghost btn--danger"
                     (click)="confirmDelete(user)"
@@ -171,6 +179,50 @@ import { AuthService } from '../../core/services/auth.service';
                 [disabled]="deleting()"
               >
                 {{ deleting() ? 'Suppression...' : 'Supprimer' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (resettingPasswordUser()) {
+        <div class="modal-overlay" (click)="closeResetPasswordModal()">
+          <div class="modal card" (click)="$event.stopPropagation()">
+            <h3>Réinitialiser le mot de passe</h3>
+            <p>
+              Un nouveau mot de passe temporaire sera généré et envoyé par email à
+              <strong>{{ resettingPasswordUser()!.email }}</strong>.
+            </p>
+            <div class="modal-actions">
+              <button class="btn btn--ghost" (click)="closeResetPasswordModal()">
+                Annuler
+              </button>
+              <button
+                class="btn btn--primary"
+                (click)="resetPassword()"
+                [disabled]="resettingPassword()"
+              >
+                {{ resettingPassword() ? 'Envoi...' : 'Envoyer' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (resetPasswordSuccess()) {
+        <div class="modal-overlay" (click)="closeSuccessModal()">
+          <div class="modal card" (click)="$event.stopPropagation()">
+            <div class="success-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <h3>Mot de passe réinitialisé</h3>
+            <p>Un email contenant le nouveau mot de passe a été envoyé à l'utilisateur.</p>
+            <div class="modal-actions">
+              <button class="btn btn--primary" (click)="closeSuccessModal()">
+                OK
               </button>
             </div>
           </div>
@@ -434,6 +486,17 @@ import { AuthService } from '../../core/services/auth.service';
       margin-top: var(--space-lg);
     }
 
+    .success-icon {
+      text-align: center;
+      margin-bottom: var(--space-md);
+
+      svg {
+        width: 48px;
+        height: 48px;
+        color: #10b981;
+      }
+    }
+
     @media (max-width: 480px) {
       .stats-grid {
         grid-template-columns: 1fr;
@@ -466,6 +529,10 @@ export class AdminComponent implements OnInit {
 
   deletingUser = signal<AdminUser | null>(null);
   deleting = signal(false);
+
+  resettingPasswordUser = signal<AdminUser | null>(null);
+  resettingPassword = signal(false);
+  resetPasswordSuccess = signal(false);
 
   currentUserId = signal<string | null>(null);
 
@@ -545,6 +612,35 @@ export class AdminComponent implements OnInit {
         this.deleting.set(false);
       },
     });
+  }
+
+  confirmResetPassword(user: AdminUser): void {
+    this.resettingPasswordUser.set(user);
+  }
+
+  closeResetPasswordModal(): void {
+    this.resettingPasswordUser.set(null);
+  }
+
+  resetPassword(): void {
+    const user = this.resettingPasswordUser();
+    if (!user) return;
+
+    this.resettingPassword.set(true);
+    this.adminService.resetUserPassword(user.id).subscribe({
+      next: () => {
+        this.resettingPassword.set(false);
+        this.closeResetPasswordModal();
+        this.resetPasswordSuccess.set(true);
+      },
+      error: () => {
+        this.resettingPassword.set(false);
+      },
+    });
+  }
+
+  closeSuccessModal(): void {
+    this.resetPasswordSuccess.set(false);
   }
 
   logout(): void {

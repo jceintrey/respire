@@ -1,6 +1,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import crypto from 'crypto';
 import { adminService } from './admin.service.js';
 import { updateUserSchema, userIdParamSchema, type UpdateUserInput, type UserIdParam } from './admin.schemas.js';
+import { authService } from '../auth/auth.service.js';
+import { sendAdminPasswordResetEmail } from '../../utils/email.js';
 
 async function adminGuard(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -120,6 +123,41 @@ export async function adminRoutes(fastify: FastifyInstance) {
     try {
       await adminService.deleteUser(parsed.data.id);
       return { message: 'Utilisateur supprimé' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur inconnue';
+      return reply.status(400).send({ error: message });
+    }
+  });
+
+  // Reset user password (admin)
+  fastify.post<{ Params: UserIdParam }>('/users/:id/reset-password', async (request, reply) => {
+    const parsed = userIdParamSchema.safeParse(request.params);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'ID invalide' });
+    }
+
+    const user = await adminService.getUserById(parsed.data.id);
+    if (!user) {
+      return reply.status(404).send({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Check if user has a password (not Google-only)
+    if (!user.password_hash) {
+      return reply.status(400).send({
+        error: 'Cet utilisateur utilise uniquement Google pour se connecter'
+      });
+    }
+
+    // Generate temporary password
+    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+
+    try {
+      await authService.adminResetPassword(parsed.data.id, temporaryPassword);
+      await sendAdminPasswordResetEmail(user.email, temporaryPassword);
+
+      return {
+        message: 'Mot de passe réinitialisé. Un email a été envoyé à l\'utilisateur.'
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erreur inconnue';
       return reply.status(400).send({ error: message });

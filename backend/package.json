@@ -24,11 +24,13 @@
     "fastify-plugin": "^5.1.0",
     "google-auth-library": "^9.6.3",
     "kysely": "^0.27.3",
+    "nodemailer": "^7.0.13",
     "pg": "^8.11.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
+    "@types/nodemailer": "^7.0.9",
     "@types/pg": "^8.11.2",
     "pino-pretty": "^11.3.0",
     "tsx": "^4.7.1",

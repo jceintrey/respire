@@ -2,10 +2,12 @@ import { Kysely, sql } from 'kysely';
 import { db } from './kysely.js';
 import * as migration001 from './migrations/001_initial.js';
 import * as migration002 from './migrations/002_add_is_admin.js';
+import * as migration003 from './migrations/003_password_reset_tokens.js';
 
 const migrations = [
   { name: '001_initial', ...migration001 },
   { name: '002_add_is_admin', ...migration002 },
+  { name: '003_password_reset_tokens', ...migration003 },
 ];
 
 async function migrate() {

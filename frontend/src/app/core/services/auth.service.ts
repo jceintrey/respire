@@ -116,6 +116,18 @@ export class AuthService {
     return localStorage.getItem(TOKEN_KEY);
   }
 
+  forgotPassword(email: string, recaptchaToken?: string | null): Observable<{ message: string }> {
+    return this.api.post('/auth/forgot-password', { email, recaptchaToken });
+  }
+
+  verifyResetToken(token: string): Observable<{ valid: boolean }> {
+    return this.api.post('/auth/verify-reset-token', { token });
+  }
+
+  resetPassword(token: string, password: string): Observable<{ message: string }> {
+    return this.api.post('/auth/reset-password', { token, password });
+  }
+
   private setToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
   }

@@ -5,12 +5,19 @@ import {
   registerSchema,
   loginSchema,
   googleAuthSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyResetTokenSchema,
   type RegisterInput,
   type LoginInput,
   type GoogleAuthInput,
+  type ForgotPasswordInput,
+  type ResetPasswordInput,
+  type VerifyResetTokenInput,
 } from './auth.schemas.js';
 import { env } from '../../config/env.js';
 import { verifyRecaptcha } from '../../utils/recaptcha.js';
+import { sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from '../../utils/email.js';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -202,6 +209,91 @@ export async function authRoutes(fastify: FastifyInstance) {
         throw new Error('Utilisateur non trouvé');
       }
       return { user: authService.toUserPayload(user) };
+    }
+  );
+
+  // Forgot password - request reset email
+  fastify.post<{ Body: ForgotPasswordInput }>(
+    '/forgot-password',
+    async (request, reply) => {
+      const parsed = forgotPasswordSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Validation error',
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      // Verify reCAPTCHA
+      if (parsed.data.recaptchaToken) {
+        const recaptchaResult = await verifyRecaptcha(
+          parsed.data.recaptchaToken,
+          'forgot_password'
+        );
+        if (!recaptchaResult.valid) {
+          return reply.status(400).send({ error: 'Vérification reCAPTCHA échouée' });
+        }
+      } else if (env.RECAPTCHA_SECRET_KEY) {
+        return reply.status(400).send({ error: 'Token reCAPTCHA requis' });
+      }
+
+      // Always return success to prevent email enumeration
+      const token = await authService.createPasswordResetToken(parsed.data.email);
+
+      if (token) {
+        await sendPasswordResetEmail(parsed.data.email, token);
+      }
+
+      return {
+        message:
+          'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',
+      };
+    }
+  );
+
+  // Verify reset token is valid
+  fastify.post<{ Body: VerifyResetTokenInput }>(
+    '/verify-reset-token',
+    async (request, reply) => {
+      const parsed = verifyResetTokenSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'Token invalide' });
+      }
+
+      const user = await authService.validatePasswordResetToken(parsed.data.token);
+      if (!user) {
+        return reply.status(400).send({ error: 'Token invalide ou expiré' });
+      }
+
+      return { valid: true };
+    }
+  );
+
+  // Reset password with token
+  fastify.post<{ Body: ResetPasswordInput }>(
+    '/reset-password',
+    async (request, reply) => {
+      const parsed = resetPasswordSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Validation error',
+          details: parsed.error.flatten().fieldErrors,
+        });
+      }
+
+      const user = await authService.resetPassword(
+        parsed.data.token,
+        parsed.data.password
+      );
+
+      if (!user) {
+        return reply.status(400).send({ error: 'Token invalide ou expiré' });
+      }
+
+      // Send confirmation email
+      await sendPasswordResetConfirmationEmail(user.email);
+
+      return { message: 'Mot de passe modifié avec succès' };
     }
   );
 }

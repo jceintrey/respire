@@ -3,8 +3,10 @@ import { hashPassword, verifyPassword } from '../../utils/password.js';
 import { generateRefreshToken, hashToken } from '../../utils/tokens.js';
 import type { RegisterInput, LoginInput } from './auth.schemas.js';
 import type { User } from '../../db/types.js';
+import crypto from 'crypto';
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
+const PASSWORD_RESET_EXPIRY_HOURS = 1;
 
 export interface AuthTokens {
   accessToken: string;
@@ -185,6 +187,132 @@ export class AuthService {
       name: user.name,
       isAdmin: user.is_admin,
     };
+  }
+
+  async createPasswordResetToken(email: string): Promise<string | null> {
+    const user = await db
+      .selectFrom('users')
+      .select(['id', 'password_hash'])
+      .where('email', '=', email.toLowerCase())
+      .executeTakeFirst();
+
+    // Don't reveal if user exists, but also don't create token for Google-only accounts
+    if (!user || !user.password_hash) {
+      return null;
+    }
+
+    // Invalidate any existing tokens for this user
+    await db
+      .updateTable('password_reset_tokens')
+      .set({ used_at: new Date() })
+      .where('user_id', '=', user.id)
+      .where('used_at', 'is', null)
+      .execute();
+
+    // Generate new token
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashToken(token);
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + PASSWORD_RESET_EXPIRY_HOURS);
+
+    await db
+      .insertInto('password_reset_tokens')
+      .values({
+        user_id: user.id,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
+      })
+      .execute();
+
+    return token;
+  }
+
+  async validatePasswordResetToken(token: string): Promise<User | null> {
+    const tokenHash = hashToken(token);
+
+    const resetToken = await db
+      .selectFrom('password_reset_tokens')
+      .selectAll()
+      .where('token_hash', '=', tokenHash)
+      .where('expires_at', '>', new Date())
+      .where('used_at', 'is', null)
+      .executeTakeFirst();
+
+    if (!resetToken) {
+      return null;
+    }
+
+    const user = await db
+      .selectFrom('users')
+      .selectAll()
+      .where('id', '=', resetToken.user_id)
+      .executeTakeFirst();
+
+    return user || null;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<User | null> {
+    const tokenHash = hashToken(token);
+
+    const resetToken = await db
+      .selectFrom('password_reset_tokens')
+      .selectAll()
+      .where('token_hash', '=', tokenHash)
+      .where('expires_at', '>', new Date())
+      .where('used_at', 'is', null)
+      .executeTakeFirst();
+
+    if (!resetToken) {
+      return null;
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    // Update password
+    const user = await db
+      .updateTable('users')
+      .set({
+        password_hash: passwordHash,
+        updated_at: new Date(),
+      })
+      .where('id', '=', resetToken.user_id)
+      .returningAll()
+      .executeTakeFirst();
+
+    // Mark token as used
+    await db
+      .updateTable('password_reset_tokens')
+      .set({ used_at: new Date() })
+      .where('id', '=', resetToken.id)
+      .execute();
+
+    // Revoke all refresh tokens for security
+    if (user) {
+      await this.revokeAllUserTokens(user.id);
+    }
+
+    return user || null;
+  }
+
+  async adminResetPassword(userId: string, newPassword: string): Promise<User | null> {
+    const passwordHash = await hashPassword(newPassword);
+
+    const user = await db
+      .updateTable('users')
+      .set({
+        password_hash: passwordHash,
+        updated_at: new Date(),
+      })
+      .where('id', '=', userId)
+      .returningAll()
+      .executeTakeFirst();
+
+    // Revoke all refresh tokens for security
+    if (user) {
+      await this.revokeAllUserTokens(user.id);
+    }
+
+    return user || null;
   }
 }
 

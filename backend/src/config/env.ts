@@ -10,6 +10,15 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   CORS_ORIGIN: z.string().default('http://localhost:4200'),
   RECAPTCHA_SECRET_KEY: z.string().optional(),
+  // SMTP configuration
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_SECURE: z.string().transform((val) => val === 'true').default('false'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
+  // Frontend URL for email links
+  FRONTEND_URL: z.string().default('http://localhost:4200'),
 });
 
 export type Env = z.infer<typeof envSchema>;

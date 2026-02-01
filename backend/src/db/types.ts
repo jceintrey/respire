@@ -5,6 +5,7 @@ export interface Database {
   breathing_patterns: BreathingPatternsTable;
   sessions: SessionsTable;
   refresh_tokens: RefreshTokensTable;
+  password_reset_tokens: PasswordResetTokensTable;
 }
 
 export interface UsersTable {
@@ -65,3 +66,15 @@ export interface RefreshTokensTable {
 
 export type RefreshToken = Selectable<RefreshTokensTable>;
 export type NewRefreshToken = Insertable<RefreshTokensTable>;
+
+export interface PasswordResetTokensTable {
+  id: Generated<string>;
+  user_id: string;
+  token_hash: string;
+  expires_at: Date;
+  used_at: Date | null;
+  created_at: Generated<Date>;
+}
+
+export type PasswordResetToken = Selectable<PasswordResetTokensTable>;
+export type NewPasswordResetToken = Insertable<PasswordResetTokensTable>;

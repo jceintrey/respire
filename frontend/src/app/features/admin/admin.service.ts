@@ -52,4 +52,8 @@ export class AdminService {
   deleteUser(id: string): Observable<{ message: string }> {
     return this.api.delete(`/admin/users/${id}`);
   }
+
+  resetUserPassword(id: string): Observable<{ message: string }> {
+    return this.api.post(`/admin/users/${id}/reset-password`, {});
+  }
 }

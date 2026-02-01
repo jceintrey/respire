@@ -61,6 +61,9 @@ import { RecaptchaService } from '../../core/services/recaptcha.service';
               required
               autocomplete="current-password"
             />
+            <a routerLink="/auth/forgot-password" class="forgot-link">
+              Mot de passe oublié ?
+            </a>
           </div>
 
           <button
@@ -126,6 +129,14 @@ import { RecaptchaService } from '../../core/services/recaptcha.service';
 
     .auth-form {
       margin-bottom: var(--space-lg);
+    }
+
+    .forgot-link {
+      display: block;
+      text-align: right;
+      font-size: 0.75rem;
+      margin-top: var(--space-xs);
+      color: var(--primary);
     }
 
     .error-banner {
